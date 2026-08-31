@@ -1,0 +1,31 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: keenvpn
+      POSTGRES_USER: keen
+      POSTGRES_PASSWORD: keen
+    ports:
+      - "5433:5432"
+    volumes:
+      - keen_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keen -d keenvpn"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  app:
+    build: .
+    environment:
+      DATABASE_URL: postgresql://keen:keen@db:5432/keenvpn?schema=public
+      APP_ORIGIN: http://localhost:3000
+      NODE_ENV: production
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+
+volumes:
+  keen_postgres_data:
